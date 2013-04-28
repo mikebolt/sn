@@ -1,0 +1,273 @@
+<html>
+<meta charset="utf-8">
+<head>
+<title>sn</title>
+</head>
+<body bgcolor="#88F">
+<div style="text-align:center;margin-top:200px;">
+<canvas id="d" width="294" height="252">
+</canvas>
+</div>
+<script type="text/javascript">
+var c, frame, key, colors, level, levels, clockwise, changedDirection, restoreKey, started, id, scale, restoreId, dp, cc, nc, player, pc;
+console.log(window.location.search);
+scale = 42;
+restoreId = 0;
+level = 0;
+clockwise = true;
+changedDirection = false;
+started = false;
+
+// Tile ids:
+//        empty ,wall  ,up    ,right ,down  ,left  ,finish,clockwise,counterclockwise
+//           0      1      2      3      4      5      6      7         8
+colors = ["#888","#000","#FFF","#FFF","#FFF","#FFF","#0F0","#00F",   "#F82"];
+
+levelsOriginal = 
+ [[0,0,0,0,0,0,0,
+   0,3,0,0,0,0,0,
+   0,0,0,0,0,0,0,
+   0,0,0,0,0,0,0,
+   0,0,0,0,0,6,0,
+   0,0,0,0,0,0,0],
+
+  [6,0,0,0,0,0,0,
+   1,1,1,1,1,0,1,
+   3,0,0,0,0,0,0,
+   0,0,0,0,0,0,0,
+   0,0,0,0,0,0,0,
+   0,0,0,0,1,0,0],
+
+  [0,0,0,0,0,0,0,
+   0,0,0,0,0,0,0,
+   1,0,1,0,0,0,0,
+   1,0,1,0,1,0,0,
+   1,0,1,0,1,1,1,
+   1,6,1,0,0,0,5],
+
+  [3,0,0,0,0,0,8,
+   0,0,0,0,0,0,0,
+   0,0,0,0,0,0,0,
+   0,0,0,0,0,0,0,
+   0,0,0,0,0,0,1,
+   0,0,0,0,0,0,6],
+   
+  [6,0,1,0,0,0,0,
+   1,0,0,0,0,0,0,
+   0,0,0,0,0,0,0,
+   0,0,0,4,0,0,0,
+   0,0,0,0,0,0,0,
+   7,0,0,0,0,0,8],
+
+  [0,0,0,0,0,0,0,
+   0,1,0,0,0,0,8,
+   0,1,0,1,1,0,0,
+   0,1,0,0,0,0,0,
+   0,1,0,1,1,1,1,
+   6,1,0,0,0,0,5],
+   
+  [0,4,1,0,0,0,0,
+   0,0,0,8,1,0,6,
+   0,0,0,0,7,0,1,
+   0,0,0,0,1,0,0,
+   0,0,0,0,7,0,0,
+   0,0,0,0,7,0,0],
+
+  [0,4,1,0,0,0,6,
+   0,0,0,8,1,0,0,
+   0,0,0,0,0,8,1,
+   0,0,0,0,0,0,0,
+   0,7,0,0,0,0,0,
+   0,0,0,0,0,0,0],
+
+  [3,0,1,8,1,0,6,
+   1,0,1,0,1,7,1,
+   1,0,1,0,1,0,1,
+   1,0,1,0,1,0,1,
+   1,0,0,0,0,0,1,
+   1,0,0,0,0,0,1],
+   
+  [2,7,8,7,8,7,8,
+   7,8,7,8,7,8,7,
+   8,7,8,7,8,7,8,
+   7,8,7,8,7,8,7,
+   8,7,8,7,8,7,8,
+   7,8,7,8,7,8,6],
+   
+  [0,0,0,1,0,1,0,
+   0,1,0,1,3,0,0,
+   0,1,0,1,8,1,0,
+   0,1,0,1,1,1,0,
+   0,1,0,0,0,0,0,
+   6,1,0,1,7,1,0],
+   
+  [0,8,1,7,1,8,6,
+   0,8,0,7,1,8,0,
+   0,8,1,7,0,8,0,
+   0,8,0,7,1,8,0,
+   0,8,1,7,0,8,0,
+   2,8,1,7,1,8,0],
+   
+  [1,1,1,1,1,1,1,
+   1,1,8,7,0,1,1,
+   1,1,0,8,0,1,1,
+   1,1,0,1,6,1,1,
+   1,1,4,7,0,1,1,
+   1,1,1,1,1,1,1],
+   
+  [0,0,0,1,0,0,0,
+   0,1,0,1,0,1,0,
+   0,0,0,0,0,0,7,
+   1,0,1,1,0,0,0,
+   6,0,1,8,1,1,0,
+   0,0,1,0,0,0,2],
+
+  [6,0,1,0,0,1,0,
+   1,0,0,0,0,0,0,
+   0,0,0,0,0,1,3,
+   1,1,1,0,1,1,1,
+   0,0,0,0,0,0,0,
+   7,0,0,0,0,0,8],
+   
+  [0,0,6,0,6,0,0,
+   0,0,6,0,6,0,0,
+   0,0,6,0,6,0,0,
+   6,0,0,0,0,0,6,
+   0,6,0,0,0,6,0,
+   0,0,6,6,6,0,0]];
+   
+cloneLevels();
+
+c = document.getElementById("d").getContext("2d");
+document.onkeydown = function(e)
+{
+   if (!changedDirection)
+   {
+      for (var i = 0; i < 42; i++)
+      {
+         id = levels[level][i];
+         if (id == 2 || id == 3 || id == 4 || id ==5)
+         {
+            if (clockwise){
+               id++;
+               if (id > 5)
+               {
+                  id = 2;
+               }
+            } else {
+               id--;
+               if (id < 2)
+               {
+                  id = 5;
+               }
+            }
+         }
+         levels[level][i] = id;
+      }
+      changedDirection = true;
+   }
+};
+window.setInterval(runFrame, 250);
+
+function runFrame()
+{  
+   changedDirection = false;
+   dp = 0; // delta position
+   pc = 0; // player tile id
+   for (var j = 0; j < 42; j++)
+   {
+      cc = levels[level][j]; // current tile id
+      // check for player, find position delta
+      // compensate for boundaries
+      if (cc == 2)
+      {
+         if (Math.floor(j/7) > 0)
+         {
+            dp = -7;
+         }
+         player = j;
+         pc = cc;
+      } else if (cc == 3) {
+         if (j%7 < 6)
+         {
+            dp = 1;
+         }
+         player = j;
+         pc = cc;
+      } else if (cc == 4) {
+         if (Math.floor(j/7) < 5)
+         {
+            dp = 7;
+         }
+         player = j;
+         pc = cc;
+      } else if (cc == 5) {
+         if (j%7 > 0)
+         {
+            dp = -1;
+         }
+         player = j;
+         pc = cc;
+      }
+   }
+   
+   nc = levels[level][player + dp];
+   // check if the level is won
+   if (nc == 6)
+   {
+      level++;
+      clockwise = true;
+      restoreId = 0;
+      // levels.length is the number of levels
+      if (level >= levels.length)
+      {
+         level = 0;
+         cloneLevels();
+      }
+      return;
+   }
+   
+   // Check the block in front of the player, then move the player
+   // indexes are safe because of wall checking
+   if (nc != 1)
+   {
+      // move the player forward
+      levels[level][player + dp] = pc;
+      
+      // restore the tile id from where the player was
+      if (dp != 0)
+      {
+         levels[level][player] = restoreId;
+         restoreId = nc;
+      }
+   }
+   
+   if (nc == 7)
+   {
+      clockwise = true;
+   }
+   
+   if (nc == 8)
+   {
+      clockwise = false;
+   }
+   
+   // Render
+   for (var i = 0; i < 42; i++)
+   {
+      c.fillStyle = colors[levels[level][i]];
+      c.fillRect(i % 7 * scale, Math.floor(i/7) * scale, scale, scale);
+   }
+}
+
+function cloneLevels()
+{
+   levels = levelsOriginal;
+   for (var i = 0; i < levels.length; i++)
+   {
+      levels[i] = levelsOriginal[i].slice(0);
+   }
+}
+</script>
+</body>
+</html>
